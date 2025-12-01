@@ -3,40 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Re:Player</title>
-    <meta name="google-site-verification" content="IcQTdvKNRYN4yXt04h1Li8kcdZNJb36etlOugGiJ0lM" />
+    <title>Re:player</title>
     <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
     <style>
         :root {
 
             --bg-color: #2d3436; --panel-bg: #353b48; --text-color: #dfe6e9; --border-color: #636e72;
             --accent-color: #9fc5e8; --accent-text: #2d3436;
-            --timer-red: #ff4757; --timeline-bg: #636e72; --timeline-fill: #9fc5e8; --loop-region: rgba(159, 197, 232, 0.3);
+            --timer-red: #ff4757; --timeline-bg: #636e72; --timeline-fill: #9fc5e8; --loop-region: rgba(159, 197, 232, 0.4);
             --hover-bar: rgba(255, 255, 255, 0.3);
         }
         [data-theme="light"] {
             --bg-color: #f4f4f9; --panel-bg: #ffffff; --text-color: #333333; --border-color: #dfe6e9;
-            --timeline-bg: #dfe6e9; --loop-region: rgba(255, 234, 167, 0.5);
+            --timeline-bg: #dfe6e9; --loop-region: rgba(255, 234, 167, 0.6);
             --hover-bar: rgba(0, 0, 0, 0.1);
         }
         * { box-sizing: border-box; outline: none; }
         
 
         body, html { 
-            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
             font-family: 'Gowun Dodum', sans-serif;
             background: var(--bg-color); color: var(--text-color); 
-            transition: background 0.3s, color 0.3s; 
+            transition: background 0.3s, color 0.3s;
+            overflow-y: auto; 
         }
 
+
         .app-container {
-            display: grid; width: 100vw; height: 100vh;
-            grid-template-rows: 60px 1fr 50px 30px 0px; 
+            display: grid; width: 100vw; min-height: 100vh;
+           
+            grid-template-rows: 60px 1fr 50px 40px 0px; 
             grid-template-columns: 1fr 0px; 
             transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .app-container.tools-active { 
-            grid-template-rows: 60px 1fr 50px 30px 150px; 
+            grid-template-rows: 60px 1fr 50px 40px 150px; 
             grid-template-columns: 1fr 400px; 
         }
 
@@ -46,6 +48,7 @@
         .timeline-container { grid-row: 4; grid-column: 1; } 
         footer { grid-row: 5; grid-column: 1; }
         aside { grid-row: 2 / 6; grid-column: 2; }
+
 
         header {
             background: var(--panel-bg); border-bottom: 1px solid var(--border-color);
@@ -70,30 +73,48 @@
         button.primary { background: var(--accent-color); color: var(--accent-text); }
         #fsBtn { min-width: 120px; }
 
-        main { background: #000; position: relative; display: flex; flex-direction: column; overflow: hidden; width: 100%; height: 100%; }
-        #video-placeholder, video { width: 100%; height: 100%; }
+
+        main { 
+            background: #000; position: relative; 
+            display: flex; justify-content: center; align-items: center;
+            width: 100%; height: 100%; 
+            padding: 10px; 
+            overflow: hidden;
+        }
+        
+
+        .video-wrapper {
+            width: 100%;
+            max-width: 100%;
+
+            max-height: 100%; 
+            aspect-ratio: 16 / 9; 
+            position: relative;
+            background: #000;
+        }
+        
+        #yt-player, video { width: 100%; height: 100%; display: block; }
+        #local-player { object-fit: contain; } 
+
 
         .control-bar {
             background: var(--panel-bg); display: flex; align-items: center; justify-content: center;
             gap: 15px; border-top: 1px solid var(--border-color);
         }
-        .control-bar button {
-            font-size: 0.9rem; padding: 8px 16px; display: flex; align-items: center; gap: 5px;
-        }
         #btnPlayPause { 
-            width: 42px; height: 42px; 
-            justify-content: center; align-items: center;
-            font-size: 1.2rem; padding: 0; 
-            border-radius: 8px;
-            background: var(--text-color); color: var(--bg-color); 
+            width: 42px; height: 42px; justify-content: center; align-items: center;
+            font-size: 1.2rem; padding: 0; border-radius: 8px;
+            background: var(--text-color); color: var(--bg-color); display: flex;
         }
         #btnA { color: #00b894; border: 1px solid #00b894; background: rgba(0, 184, 148, 0.1); }
         #btnB { color: #ff7675; border: 1px solid #ff7675; background: rgba(255, 118, 117, 0.1); }
         #btnA.active { background: #00b894; color: white; } 
         #btnB.active { background: #ff7675; color: white; }
 
+
         .timeline-container {
             background: var(--panel-bg); padding: 0 20px; display: flex; align-items: center; position: relative;
+            user-select: none; 
         }
         .timeline-track {
             width: 100%; height: 12px; background: var(--timeline-bg); border-radius: 6px;
@@ -107,17 +128,23 @@
         .loop-highlight {
             position: absolute; top: 0; height: 100%; background: var(--loop-region); display: none; pointer-events: none; z-index: 0;
         }
+
         .pin {
-            position: absolute; top: -6px; width: 4px; height: 24px; border-radius: 2px;
-            transform: translateX(-50%); display: none; pointer-events: none; z-index: 5;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            position: absolute; top: -8px; width: 12px; height: 28px; border-radius: 4px;
+            transform: translateX(-50%); display: none; z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            cursor: ew-resize;
+            pointer-events: auto; 
         }
-        .pin.start { background: #00b894; } .pin.end { background: #d63031; }
+        .pin.start { background: #00b894; border: 2px solid #fff; } 
+        .pin.end { background: #d63031; border: 2px solid #fff; }
+
         #timeTooltip {
             position: fixed; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; 
             border-radius: 4px; font-size: 0.8rem; pointer-events: none; display: none; z-index: 100;
             transform: translate(-50%, -150%); white-space: nowrap;
         }
+
 
         aside {
             background: var(--panel-bg); border-left: 1px solid var(--border-color);
@@ -152,11 +179,13 @@
         .tn-10 { top: 50%; right: 15px; transform: translateY(-50%); }
         .tn-20 { bottom: 10px; left: 50%; transform: translateX(-50%); }
         .tn-30 { top: 50%; left: 15px; transform: translateY(-50%); }
+
         .timer-digital { font-size: 3.5rem; font-weight: bold; margin-bottom: 20px; font-variant-numeric: tabular-nums; color: var(--text-color); }
         .timer-adj-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; margin-bottom: 15px; }
         .timer-adj-btns button { font-size: 0.8rem; padding: 8px 0; }
         .timer-main-controls { display: flex; gap: 10px; width: 100%; }
         .timer-main-controls button { flex: 1; padding: 10px; font-size: 1rem; }
+
 
         footer {
             background: var(--panel-bg); border-top: 1px solid var(--border-color);
@@ -172,23 +201,18 @@
             font-size: 36px; background: var(--bg-color); color: var(--text-color); line-height: 1.4;
         }
 
-        @media (max-width: 1000px) {
-            body, html { overflow-y: auto; height: auto; }
-            
-            .app-container { height: auto; min-height: 100vh; display: block; }
 
+        @media (max-width: 1000px) {
+            .app-container { display: block; height: auto; min-height: 100vh; }
             .app-container.tools-active { 
                 display: grid;
-                grid-template-rows: 60px 40vh 50px 30px 150px auto; 
+                grid-template-rows: 60px auto 50px 40px 150px auto;
                 grid-template-columns: 1fr; 
-                height: auto;
             }
-            
+            main { min-height: 300px; } 
             aside { 
-                grid-row: 6; grid-column: 1; 
-                border-left: none; border-top: 1px solid var(--border-color); 
-                overflow: visible; 
-                padding-bottom: 50px;
+                grid-row: 6; grid-column: 1; border-left: none; border-top: 1px solid var(--border-color); 
+                overflow: visible; padding-bottom: 50px; 
             }
             footer { grid-row: 5; grid-column: 1; }
             input[type="text"] { width: 130px; } .title { display: none; }
@@ -202,7 +226,7 @@
 <div class="app-container" id="app">
     <header>
         <div class="control-group">
-            <span class="title">🎬 Re:Player by 휴르쌤</span>
+            <span class="title">🎬 Re:player by 휴르쌤</span>
             <button onclick="toggleFullScreen()" id="fsBtn">전체 화면으로 보기</button>
         </div>
         <div class="control-group">
@@ -218,8 +242,10 @@
     </header>
 
     <main>
-        <div id="yt-player"></div>
-        <video id="local-player" class="hidden"></video>
+        <div class="video-wrapper">
+            <div id="yt-player"></div>
+            <video id="local-player" class="hidden"></video>
+        </div>
     </main>
 
     <div class="control-bar">
@@ -227,7 +253,7 @@
         <div style="width: 10px;"></div>
         <button onclick="setLoop('A')" id="btnA">📍 A (시작)</button>
         <button onclick="setLoop('B')" id="btnB">📍 B (끝)</button>
-        <button onclick="clearLoop()" id="btnClear">리셋</button>
+        <button onclick="clearLoop()" id="btnClear">해제</button>
     </div>
 
     <div class="timeline-container">
@@ -235,8 +261,8 @@
             <div class="timeline-hover-bar" id="hoverBar"></div>
             <div class="timeline-current" id="timelineCurrent"></div>
             <div class="loop-highlight" id="loopHighlight"></div>
-            <div class="pin start" id="pinA" data-label="A"></div>
-            <div class="pin end" id="pinB" data-label="B"></div>
+            <div class="pin start" id="pinA" data-label="A" onmousedown="startDrag(event, 'start')"></div>
+            <div class="pin end" id="pinB" data-label="B" onmousedown="startDrag(event, 'end')"></div>
         </div>
         <div id="timeTooltip">00:00:00</div>
     </div>
@@ -279,12 +305,12 @@
             <button onclick="changeFontSize(-2)">-가</button>
             <button onclick="changeFontSize(2)">+가</button>
         </div>
-        <textarea class="memo-box" id="memoPad" placeholder="학생들에게 안내할 내용을 적어주세요"></textarea>
+        <textarea class="memo-box" id="memoPad" placeholder="학생들에게 안내할 내용을 적어주세요..."></textarea>
     </footer>
 </div>
 
 <script>
-const _0x11b727=_0x27cc;(function(_0x3dff30,_0x3cf719){const _0x287c82=_0x27cc,_0x3efa62=_0x3dff30();while(!![]){try{const _0x408bc7=-parseInt(_0x287c82(0x227))/0x1+parseInt(_0x287c82(0x214))/0x2*(-parseInt(_0x287c82(0x1ed))/0x3)+-parseInt(_0x287c82(0x1f6))/0x4+-parseInt(_0x287c82(0x223))/0x5*(parseInt(_0x287c82(0x229))/0x6)+-parseInt(_0x287c82(0x206))/0x7*(-parseInt(_0x287c82(0x1e2))/0x8)+-parseInt(_0x287c82(0x1ce))/0x9*(-parseInt(_0x287c82(0x1df))/0xa)+parseInt(_0x287c82(0x1ee))/0xb;if(_0x408bc7===_0x3cf719)break;else _0x3efa62['push'](_0x3efa62['shift']());}catch(_0x24e482){_0x3efa62['push'](_0x3efa62['shift']());}}}(_0x2015,0x8dd15));let player,localVideo=document['getElementById'](_0x11b727(0x203)),loopStart=null,loopEnd=null,isLooping=![],currentMode=_0x11b727(0x219),timerTime=0x0,timerMax=0x28*0x3c,timerInterval=null,soundEnabled=!![];const audioCtx=new(window[(_0x11b727(0x1fe))]||window[(_0x11b727(0x220))])();function playChime(){const _0x5ea4a7=_0x11b727;if(!soundEnabled)return;if(audioCtx[_0x5ea4a7(0x1f8)]===_0x5ea4a7(0x1bd))audioCtx['resume']();const _0x39fd97=audioCtx[_0x5ea4a7(0x1f9)],_0x4df7da=[{'f':659.25,'t':0x0},{'f':523.25,'t':0.6},{'f':587.33,'t':1.2},{'f':0x188,'t':1.8},{'f':0x188,'t':3.2},{'f':587.33,'t':3.8},{'f':659.25,'t':4.4},{'f':523.25,'t':0x5}];_0x4df7da[_0x5ea4a7(0x1e6)](_0x19543f=>{const _0x210762=_0x5ea4a7,_0x18f079=audioCtx[_0x210762(0x1ec)](),_0x3e163c=audioCtx[_0x210762(0x212)]();_0x18f079[_0x210762(0x1be)]=_0x210762(0x1de),_0x18f079[_0x210762(0x1f3)][_0x210762(0x22b)]=_0x19543f['f'],_0x18f079[_0x210762(0x216)](_0x3e163c),_0x3e163c['connect'](audioCtx['destination']),_0x18f079[_0x210762(0x21a)](_0x39fd97+_0x19543f['t']),_0x3e163c['gain']['setValueAtTime'](0x0,_0x39fd97+_0x19543f['t']),_0x3e163c[_0x210762(0x1fa)][_0x210762(0x1ff)](0.5,_0x39fd97+_0x19543f['t']+0.05),_0x3e163c[_0x210762(0x1fa)][_0x210762(0x224)](0.001,_0x39fd97+_0x19543f['t']+1.2),_0x18f079[_0x210762(0x1fd)](_0x39fd97+_0x19543f['t']+1.3);});}function toggleFullScreen(){const _0x10568e=_0x11b727,_0x40b46c=document['getElementById'](_0x10568e(0x20a));!document[_0x10568e(0x1c9)]?(document[_0x10568e(0x22c)][_0x10568e(0x1e3)](),_0x40b46c[_0x10568e(0x1f0)]='창\x20모드로\x20돌아가기'):document['exitFullscreen']&&(document['exitFullscreen'](),_0x40b46c['innerText']=_0x10568e(0x1c3));}document[_0x11b727(0x202)](_0x11b727(0x1c4),()=>{const _0x55b66a=_0x11b727,_0x56ce02=document['getElementById'](_0x55b66a(0x20a));if(!document[_0x55b66a(0x1c9)])_0x56ce02[_0x55b66a(0x1f0)]='전체\x20화면으로\x20보기';else _0x56ce02[_0x55b66a(0x1f0)]=_0x55b66a(0x200);});const tag=document['createElement']('script');tag[_0x11b727(0x1cd)]='https://www.youtube.com/iframe_api';const firstScriptTag=document[_0x11b727(0x1e5)](_0x11b727(0x20d))[0x0];firstScriptTag[_0x11b727(0x1c0)][_0x11b727(0x22a)](tag,firstScriptTag);function onYouTubeIframeAPIReady(){const _0x57bf88=_0x11b727;player=new YT[(_0x57bf88(0x21f))](_0x57bf88(0x1e7),{'height':_0x57bf88(0x1f4),'width':_0x57bf88(0x1f4),'videoId':'','events':{'onReady':()=>setInterval(updateTimeline,0x64),'onStateChange':onPlayerStateChange}});}function loadYoutube(){const _0x311130=_0x11b727,_0x1b41dc=document[_0x311130(0x226)](_0x311130(0x1dd))[_0x311130(0x22b)],_0x2acc8c=extractVideoID(_0x1b41dc);_0x2acc8c?(currentMode=_0x311130(0x219),document['getElementById']('yt-player')['style'][_0x311130(0x228)]='block',localVideo[_0x311130(0x1c8)][_0x311130(0x211)](_0x311130(0x1cb)),localVideo['pause'](),player[_0x311130(0x1ba)](_0x2acc8c),resetLoopUI(),updatePlayBtn()):alert(_0x311130(0x21d));}function loadLocalFile(_0x3641c5){const _0x33bf03=_0x11b727,_0x33fd3b=_0x3641c5[_0x33bf03(0x1d7)][0x0];if(_0x33fd3b){currentMode=_0x33bf03(0x1c2),localVideo[_0x33bf03(0x1cd)]=URL['createObjectURL'](_0x33fd3b),localVideo[_0x33bf03(0x1c8)]['remove'](_0x33bf03(0x1cb)),document[_0x33bf03(0x226)]('yt-player')[_0x33bf03(0x1e1)]['display']='none';if(player&&player[_0x33bf03(0x1d3)])player[_0x33bf03(0x1d3)]();localVideo['play'](),resetLoopUI(),localVideo['addEventListener'](_0x33bf03(0x1f7),updateTimeline),updatePlayBtn();}}function extractVideoID(_0x1c138e){const _0x3adcc1=_0x11b727,_0x2fced0=/^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/,_0x1f20de=_0x1c138e[_0x3adcc1(0x221)](_0x2fced0);return _0x1f20de&&_0x1f20de[0x7][_0x3adcc1(0x204)]==0xb?_0x1f20de[0x7]:![];}function togglePlay(){const _0x2576c1=_0x11b727,_0x2951c9=document[_0x2576c1(0x226)]('btnPlayPause');if(currentMode===_0x2576c1(0x219)&&player){const _0x14d0ab=player[_0x2576c1(0x1e9)]();if(_0x14d0ab===0x1)player['pauseVideo']();else player['playVideo']();}else{if(currentMode===_0x2576c1(0x1c2)){if(localVideo[_0x2576c1(0x1c5)])localVideo['play']();else localVideo['pause']();}}updatePlayBtn();}function updatePlayBtn(){const _0x51c653=_0x11b727,_0x42a2b1=document[_0x51c653(0x226)](_0x51c653(0x210));setTimeout(()=>{const _0x55c831=_0x51c653;let _0x189c66=![];if(currentMode===_0x55c831(0x219)&&player&&player['getPlayerState'])_0x189c66=player[_0x55c831(0x1e9)]()===0x1;else{if(currentMode===_0x55c831(0x1c2))_0x189c66=!localVideo['paused'];}_0x42a2b1[_0x55c831(0x1f0)]=_0x189c66?'⏸':'▶';},0xc8);}function onPlayerStateChange(_0x2bca2f){updatePlayBtn();}localVideo[_0x11b727(0x202)](_0x11b727(0x1d6),updatePlayBtn),localVideo[_0x11b727(0x202)](_0x11b727(0x1ca),updatePlayBtn);function getCurrentTime(){const _0x120e59=_0x11b727;if(currentMode===_0x120e59(0x219)&&player&&player[_0x120e59(0x208)])return player[_0x120e59(0x208)]();if(currentMode==='local')return localVideo[_0x120e59(0x1f9)];return 0x0;}function getDuration(){const _0x33620d=_0x11b727;if(currentMode===_0x33620d(0x219)&&player&&player[_0x33620d(0x22f)])return player[_0x33620d(0x22f)]();if(currentMode===_0x33620d(0x1c2))return localVideo[_0x33620d(0x1ea)];return 0x1;}function updateTimeline(){const _0x53d673=_0x11b727,_0x59c2c3=getCurrentTime(),_0x15a933=getDuration();if(!_0x15a933)return;document[_0x53d673(0x226)]('timelineCurrent')[_0x53d673(0x1e1)]['width']=_0x59c2c3/_0x15a933*0x64+'%';if(isLooping&&loopEnd!==null){if(_0x59c2c3>=loopEnd||_0x59c2c3<loopStart-0x1)seekTo(loopStart);}}function _0x27cc(_0x5c5a23,_0x46cceb){const _0x2015d3=_0x2015();return _0x27cc=function(_0x27ccbe,_0x180fb5){_0x27ccbe=_0x27ccbe-0x1ba;let _0x3e9111=_0x2015d3[_0x27ccbe];return _0x3e9111;},_0x27cc(_0x5c5a23,_0x46cceb);}function seekTo(_0x23a7ae){const _0x7f0a0c=_0x11b727;if(currentMode===_0x7f0a0c(0x219))player[_0x7f0a0c(0x20c)](_0x23a7ae,!![]);else localVideo[_0x7f0a0c(0x1f9)]=_0x23a7ae;}function seekVideo(_0x29236a){const _0x584a87=_0x11b727,_0xdc286a=document[_0x584a87(0x226)](_0x584a87(0x1e8))[_0x584a87(0x20e)]();seekTo((_0x29236a['clientX']-_0xdc286a['left'])/_0xdc286a[_0x584a87(0x207)]*getDuration());}const track=document[_0x11b727(0x226)](_0x11b727(0x1e8)),hoverBar=document['getElementById'](_0x11b727(0x20f)),tooltip=document[_0x11b727(0x226)](_0x11b727(0x215));track[_0x11b727(0x202)]('mousemove',_0x1f3c89=>{const _0x442bcd=_0x11b727,_0x5dfa7b=track[_0x442bcd(0x20e)](),_0x44438a=_0x1f3c89[_0x442bcd(0x1e0)]-_0x5dfa7b[_0x442bcd(0x1d0)],_0x33ae8a=Math[_0x442bcd(0x1d4)](0x0,Math[_0x442bcd(0x1d9)](0x1,_0x44438a/_0x5dfa7b[_0x442bcd(0x207)])),_0x1e355e=_0x33ae8a*getDuration();hoverBar[_0x442bcd(0x1e1)]['width']=_0x33ae8a*0x64+'%';const _0x567bc4=Math[_0x442bcd(0x1ef)](_0x1e355e/0x3c)[_0x442bcd(0x209)]()[_0x442bcd(0x1f1)](0x2,'0'),_0xeca4f2=Math[_0x442bcd(0x1ef)](_0x1e355e%0x3c)[_0x442bcd(0x209)]()[_0x442bcd(0x1f1)](0x2,'0'),_0x58194c=Math[_0x442bcd(0x1ef)](_0x1e355e%0x1*0x64)['toString']()[_0x442bcd(0x1f1)](0x2,'0');tooltip[_0x442bcd(0x1f0)]=_0x567bc4+':'+_0xeca4f2+':'+_0x58194c,tooltip[_0x442bcd(0x1e1)]['display']='block',tooltip[_0x442bcd(0x1e1)][_0x442bcd(0x1d0)]=_0x1f3c89[_0x442bcd(0x1e0)]+'px',tooltip[_0x442bcd(0x1e1)]['top']=_0x5dfa7b[_0x442bcd(0x222)]+'px';}),track[_0x11b727(0x202)](_0x11b727(0x22e),()=>{const _0x2ad8a3=_0x11b727;hoverBar['style']['width']='0%',tooltip[_0x2ad8a3(0x1e1)][_0x2ad8a3(0x228)]=_0x2ad8a3(0x21c);});function setLoop(_0x57db71){const _0x56e24c=_0x11b727,_0x44068b=getCurrentTime(),_0x2e97c1=getDuration();if(_0x57db71==='A'){loopStart=_0x44068b,loopEnd=null,isLooping=![];const _0x2f5497=document[_0x56e24c(0x226)](_0x56e24c(0x1d5));_0x2f5497[_0x56e24c(0x1e1)][_0x56e24c(0x228)]=_0x56e24c(0x1bc),_0x2f5497[_0x56e24c(0x1e1)]['left']=_0x44068b/_0x2e97c1*0x64+'%',document[_0x56e24c(0x226)]('pinB')['style'][_0x56e24c(0x228)]=_0x56e24c(0x21c),document['getElementById'](_0x56e24c(0x1cc))[_0x56e24c(0x1e1)][_0x56e24c(0x228)]=_0x56e24c(0x21c),document[_0x56e24c(0x226)](_0x56e24c(0x1c7))[_0x56e24c(0x1c8)][_0x56e24c(0x211)](_0x56e24c(0x22d)),document['getElementById'](_0x56e24c(0x21b))[_0x56e24c(0x1c8)][_0x56e24c(0x1d1)](_0x56e24c(0x22d));}else{if(_0x57db71==='B'){if(loopStart===null){alert('A를\x20먼저\x20설정하세요.');return;}if(_0x44068b<=loopStart){alert(_0x56e24c(0x1db));return;}loopEnd=_0x44068b,isLooping=!![];const _0x35e44e=document[_0x56e24c(0x226)](_0x56e24c(0x1eb));_0x35e44e['style'][_0x56e24c(0x228)]=_0x56e24c(0x1bc),_0x35e44e['style'][_0x56e24c(0x1d0)]=_0x44068b/_0x2e97c1*0x64+'%';const _0x56e41f=document[_0x56e24c(0x226)](_0x56e24c(0x1cc));_0x56e41f[_0x56e24c(0x1e1)][_0x56e24c(0x1d0)]=loopStart/_0x2e97c1*0x64+'%',_0x56e41f[_0x56e24c(0x1e1)]['width']=(_0x44068b-loopStart)/_0x2e97c1*0x64+'%',_0x56e41f[_0x56e24c(0x1e1)]['display']='block',document[_0x56e24c(0x226)]('btnB')[_0x56e24c(0x1c8)][_0x56e24c(0x211)](_0x56e24c(0x22d));}}}function _0x2015(){const _0x3020bc=['🔕\x20음소거\x20됨','7hFKRoz','width','getCurrentTime','toString','fsBtn','setItem','seekTo','script','getBoundingClientRect','hoverBar','btnPlayPause','add','createGain','dark','50AANZRu','timeTooltip','connect','memoPad','timerPie','youtube','start','btnB','none','주소를\x20확인해주세요!','data-theme','Player','webkitAudioContext','match','top','491035KEAbSv','exponentialRampToValueAtTime','light','getElementById','278905nOGxjK','display','60SnAsKK','insertBefore','value','documentElement','active','mouseleave','getDuration','loadVideoById','--deg','block','suspended','type','fontSize','parentNode','deg','local','전체\x20화면으로\x20보기','fullscreenchange','paused','tools-active','btnA','classList','fullscreenElement','pause','hidden','loopHighlight','src','6895242JOkgmh','loopPlayerMemo','left','remove','app','stopVideo','max','pinA','play','files','body','min','getAttribute','B는\x20A보다\x20뒤여야\x20합니다.','setProperty','ytUrl','sine','10NKbfGK','clientX','style','555768dVwOIc','requestFullscreen','soundBtn','getElementsByTagName','forEach','yt-player','timelineTrack','getPlayerState','duration','pinB','createOscillator','27123NnWUjm','13833248fbjkIZ','floor','innerText','padStart','toggle','frequency','100%','🔔\x20정시\x20알림\x20ON','101168rVIKxu','timeupdate','state','currentTime','gain','timerText','getItem','stop','AudioContext','linearRampToValueAtTime','창\x20모드로\x20돌아가기','setAttribute','addEventListener','local-player','length'];_0x2015=function(){return _0x3020bc;};return _0x2015();}function clearLoop(){resetLoopUI(),isLooping=![],loopStart=null,loopEnd=null;}function resetLoopUI(){const _0x4c1769=_0x11b727;document[_0x4c1769(0x226)]('pinA')[_0x4c1769(0x1e1)][_0x4c1769(0x228)]=_0x4c1769(0x21c),document[_0x4c1769(0x226)](_0x4c1769(0x1eb))[_0x4c1769(0x1e1)]['display']=_0x4c1769(0x21c),document['getElementById'](_0x4c1769(0x1cc))[_0x4c1769(0x1e1)]['display']=_0x4c1769(0x21c),document[_0x4c1769(0x226)]('btnA')[_0x4c1769(0x1c8)][_0x4c1769(0x1d1)](_0x4c1769(0x22d)),document[_0x4c1769(0x226)](_0x4c1769(0x21b))['classList'][_0x4c1769(0x1d1)]('active');}function drawTimer(){const _0x8d71d=_0x11b727,_0xc19f1c=Math[_0x8d71d(0x1ef)](timerTime/0x3c)[_0x8d71d(0x209)]()['padStart'](0x2,'0'),_0x5b1261=(timerTime%0x3c)[_0x8d71d(0x209)]()[_0x8d71d(0x1f1)](0x2,'0');document[_0x8d71d(0x226)](_0x8d71d(0x1fb))['innerText']=_0xc19f1c+':'+_0x5b1261;const _0x2fd00a=timerTime/timerMax*0x168,_0x501db6=Math['min'](Math['max'](_0x2fd00a,0x0),0x168);document[_0x8d71d(0x226)](_0x8d71d(0x218))[_0x8d71d(0x1e1)][_0x8d71d(0x1dc)](_0x8d71d(0x1bb),_0x501db6+_0x8d71d(0x1c1));}function startTimer(){if(timerInterval)return;timerInterval=setInterval(()=>{timerTime>0x0?(timerTime--,drawTimer()):(pauseTimer(),playChime());},0x3e8);}function pauseTimer(){clearInterval(timerInterval),timerInterval=null;}function resetTimer(){pauseTimer(),timerTime=0x0,drawTimer();}function adjustTimer(_0x3ee74f){timerTime+=_0x3ee74f*0x3c;if(timerTime<0x0)timerTime=0x0;if(timerTime>timerMax)timerTime=timerMax;drawTimer();}function toggleSound(){const _0x53bcef=_0x11b727;soundEnabled=!soundEnabled;const _0x2e8877=document[_0x53bcef(0x226)](_0x53bcef(0x1e4));_0x2e8877[_0x53bcef(0x1f0)]=soundEnabled?_0x53bcef(0x1f5):_0x53bcef(0x205);}function toggleTools(){const _0x3d4958=_0x11b727;document[_0x3d4958(0x226)](_0x3d4958(0x1d2))[_0x3d4958(0x1c8)][_0x3d4958(0x1f2)](_0x3d4958(0x1c6)),setTimeout(updateTimeline,0x226);}function toggleTheme(){const _0x108b94=_0x11b727,_0x346c2a=document[_0x108b94(0x1d8)],_0x545782=document['getElementById']('themeBtn');_0x346c2a[_0x108b94(0x1da)]('data-theme')===_0x108b94(0x213)?(_0x346c2a[_0x108b94(0x201)](_0x108b94(0x21e),_0x108b94(0x225)),_0x545782[_0x108b94(0x1f0)]='🌙'):(_0x346c2a[_0x108b94(0x201)]('data-theme',_0x108b94(0x213)),_0x545782['innerText']='☀️');}const memoPad=document[_0x11b727(0x226)](_0x11b727(0x217));memoPad[_0x11b727(0x22b)]=localStorage[_0x11b727(0x1fc)](_0x11b727(0x1cf))||'',memoPad['addEventListener']('input',()=>localStorage[_0x11b727(0x20b)](_0x11b727(0x1cf),memoPad[_0x11b727(0x22b)]));let currentFontSize=0x24;function changeFontSize(_0x5b6538){const _0xf1a4aa=_0x11b727;currentFontSize+=_0x5b6538;if(currentFontSize<0xc)currentFontSize=0xc;memoPad[_0xf1a4aa(0x1e1)][_0xf1a4aa(0x1bf)]=currentFontSize+'px';}drawTimer();    
+const _0x56b698=_0x132f;(function(_0x389b84,_0x560b51){const _0x12e88e=_0x132f,_0x3b1844=_0x389b84();while(!![]){try{const _0x50d40d=-parseInt(_0x12e88e(0x11e))/0x1*(-parseInt(_0x12e88e(0xf8))/0x2)+-parseInt(_0x12e88e(0x122))/0x3+parseInt(_0x12e88e(0xc7))/0x4*(-parseInt(_0x12e88e(0xe4))/0x5)+-parseInt(_0x12e88e(0xd3))/0x6*(-parseInt(_0x12e88e(0x115))/0x7)+-parseInt(_0x12e88e(0x113))/0x8*(parseInt(_0x12e88e(0xbf))/0x9)+-parseInt(_0x12e88e(0x100))/0xa+-parseInt(_0x12e88e(0x102))/0xb*(-parseInt(_0x12e88e(0x116))/0xc);if(_0x50d40d===_0x560b51)break;else _0x3b1844['push'](_0x3b1844['shift']());}catch(_0x4ca3c7){_0x3b1844['push'](_0x3b1844['shift']());}}}(_0x4246,0x3083c));let player,localVideo=document[_0x56b698(0xbe)](_0x56b698(0xdd)),loopStart=null,loopEnd=null,isLooping=![],currentMode=_0x56b698(0xc2),timerTime=0x0,timerMax=0x28*0x3c,timerInterval=null,soundEnabled=!![];const audioCtx=new(window[(_0x56b698(0x103))]||window[(_0x56b698(0x109))])();function playChime(){const _0xcd96b4=_0x56b698;if(!soundEnabled)return;if(audioCtx['state']==='suspended')audioCtx[_0xcd96b4(0x107)]();const _0x4c540b=audioCtx[_0xcd96b4(0xbc)],_0x1fabb2=[{'f':659.25,'t':0x0},{'f':523.25,'t':0.6},{'f':587.33,'t':1.2},{'f':0x188,'t':1.8},{'f':0x188,'t':3.2},{'f':587.33,'t':3.8},{'f':659.25,'t':4.4},{'f':523.25,'t':0x5}];_0x1fabb2[_0xcd96b4(0xd6)](_0x53a7ba=>{const _0x30f727=_0xcd96b4,_0x204aed=audioCtx[_0x30f727(0xb4)](),_0x2c542f=audioCtx['createGain']();_0x204aed[_0x30f727(0x10f)]=_0x30f727(0x104),_0x204aed[_0x30f727(0xb0)][_0x30f727(0x11d)]=_0x53a7ba['f'],_0x204aed['connect'](_0x2c542f),_0x2c542f[_0x30f727(0xad)](audioCtx['destination']),_0x204aed[_0x30f727(0xc8)](_0x4c540b+_0x53a7ba['t']),_0x2c542f[_0x30f727(0xce)][_0x30f727(0xfe)](0x0,_0x4c540b+_0x53a7ba['t']),_0x2c542f[_0x30f727(0xce)][_0x30f727(0xeb)](0.5,_0x4c540b+_0x53a7ba['t']+0.05),_0x2c542f[_0x30f727(0xce)][_0x30f727(0xaf)](0.001,_0x4c540b+_0x53a7ba['t']+1.2),_0x204aed[_0x30f727(0xf7)](_0x4c540b+_0x53a7ba['t']+1.3);});}function toggleFullScreen(){const _0x49ef58=_0x56b698,_0x34a78b=document['getElementById'](_0x49ef58(0x124));!document[_0x49ef58(0xfd)]?(document['documentElement'][_0x49ef58(0xdc)](),_0x34a78b['innerText']=_0x49ef58(0x114)):document[_0x49ef58(0xf5)]&&(document[_0x49ef58(0xf5)](),_0x34a78b[_0x49ef58(0xb7)]=_0x49ef58(0x10a));}document[_0x56b698(0xc5)](_0x56b698(0xd5),()=>{const _0x24f464=_0x56b698,_0x4e5954=document[_0x24f464(0xbe)]('fsBtn');if(!document[_0x24f464(0xfd)])_0x4e5954[_0x24f464(0xb7)]=_0x24f464(0x10a);else _0x4e5954[_0x24f464(0xb7)]='창\x20모드로\x20돌아가기';});const tag=document[_0x56b698(0x108)](_0x56b698(0xe1));function _0x4246(){const _0x5eb68d=['style','tools-active','end','fullscreenElement','setValueAtTime','files','1640360OcyRgL','hoverBar','708851ximqCU','AudioContext','sine','pause','setAttribute','resume','createElement','webkitAudioContext','전체\x20화면으로\x20보기','mouseup','playVideo','mousemove','pinB','type','max','src','getBoundingClientRect','152696igzgVg','창\x20모드로\x20돌아가기','18592pJWdxX','48LFnXvo','btnA','ytUrl','loopPlayerMemo','timelineCurrent','deg','A를\x20먼저\x20설정하세요.','value','352911kKhHRT','주소를\x20확인해주세요!','input','toString','263028ssRQWG','min','fsBtn','timeupdate','local','loadVideoById','timelineTrack','block','yt-player','connect','mouseleave','exponentialRampToValueAtTime','frequency','add','body','removeEventListener','createOscillator','seekTo','getElementsByTagName','innerText','dark','themeBtn','100%','length','currentTime','remove','getElementById','27oVTUAI','match','btnB','youtube','data-theme','timerText','addEventListener','light','84xshhfB','start','left','duration','btnPlayPause','timeTooltip','https://www.youtube.com/iframe_api','gain','padStart','active','memoPad','getAttribute','402LAyFue','top','fullscreenchange','forEach','paused','stopVideo','🔔\x20정시\x20알림\x20ON','🔕\x20음소거\x20됨','loopHighlight','requestFullscreen','local-player','clientX','display','insertBefore','script','target','width','66890ZCuyBw','play','pin','toggle','getCurrentTime','preventDefault','pauseVideo','linearRampToValueAtTime','setItem','setProperty','--deg','stopPropagation','soundBtn','hidden','classList','floor','getPlayerState','exitFullscreen','getDuration','stop','2xyvYHL','none'];_0x4246=function(){return _0x5eb68d;};return _0x4246();}tag[_0x56b698(0x111)]=_0x56b698(0xcd);const firstScriptTag=document[_0x56b698(0xb6)]('script')[0x0];firstScriptTag['parentNode'][_0x56b698(0xe0)](tag,firstScriptTag);function onYouTubeIframeAPIReady(){const _0x3330d4=_0x56b698;player=new YT['Player'](_0x3330d4(0xac),{'height':'100%','width':_0x3330d4(0xba),'videoId':'','events':{'onReady':()=>setInterval(updateTimeline,0x64),'onStateChange':onPlayerStateChange}});}function loadYoutube(){const _0x1f04d8=_0x56b698,_0x2e0c6d=document[_0x1f04d8(0xbe)](_0x1f04d8(0x118))[_0x1f04d8(0x11d)],_0x4b70dc=extractVideoID(_0x2e0c6d);_0x4b70dc?(currentMode=_0x1f04d8(0xc2),document['getElementById']('yt-player')[_0x1f04d8(0xfa)][_0x1f04d8(0xdf)]=_0x1f04d8(0x129),localVideo[_0x1f04d8(0xf2)][_0x1f04d8(0xb1)](_0x1f04d8(0xf1)),localVideo['pause'](),player[_0x1f04d8(0x127)](_0x4b70dc),resetLoopUI(),updatePlayBtn()):alert(_0x1f04d8(0x11f));}function loadLocalFile(_0x2d1bed){const _0x7b1380=_0x56b698,_0x23a5c8=_0x2d1bed[_0x7b1380(0xff)][0x0];if(_0x23a5c8){currentMode='local',localVideo[_0x7b1380(0x111)]=URL['createObjectURL'](_0x23a5c8),localVideo[_0x7b1380(0xf2)]['remove'](_0x7b1380(0xf1)),document[_0x7b1380(0xbe)](_0x7b1380(0xac))['style']['display']=_0x7b1380(0xf9);if(player&&player[_0x7b1380(0xd8)])player[_0x7b1380(0xd8)]();localVideo['play'](),resetLoopUI(),localVideo[_0x7b1380(0xc5)](_0x7b1380(0x125),updateTimeline),updatePlayBtn();}}function extractVideoID(_0x3dd061){const _0x577e22=_0x56b698,_0xaf3f8a=/^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/,_0x25fa17=_0x3dd061[_0x577e22(0xc0)](_0xaf3f8a);return _0x25fa17&&_0x25fa17[0x7][_0x577e22(0xbb)]==0xb?_0x25fa17[0x7]:![];}function togglePlay(){const _0x4197ea=_0x56b698,_0x4363b0=document['getElementById'](_0x4197ea(0xcb));if(currentMode==='youtube'&&player){const _0x190338=player[_0x4197ea(0xf4)]();if(_0x190338===0x1)player[_0x4197ea(0xea)]();else player[_0x4197ea(0x10c)]();}else{if(currentMode===_0x4197ea(0x126)){if(localVideo['paused'])localVideo[_0x4197ea(0xe5)]();else localVideo[_0x4197ea(0x105)]();}}updatePlayBtn();}function updatePlayBtn(){const _0x5b650d=_0x56b698,_0x419056=document[_0x5b650d(0xbe)](_0x5b650d(0xcb));setTimeout(()=>{const _0x92fe08=_0x5b650d;let _0x5c379a=![];if(currentMode===_0x92fe08(0xc2)&&player&&player[_0x92fe08(0xf4)])_0x5c379a=player[_0x92fe08(0xf4)]()===0x1;else{if(currentMode===_0x92fe08(0x126))_0x5c379a=!localVideo[_0x92fe08(0xd7)];}_0x419056[_0x92fe08(0xb7)]=_0x5c379a?'⏸':'▶';},0xc8);}function onPlayerStateChange(_0x5628c0){updatePlayBtn();}localVideo[_0x56b698(0xc5)](_0x56b698(0xe5),updatePlayBtn),localVideo[_0x56b698(0xc5)](_0x56b698(0x105),updatePlayBtn);function getCurrentTime(){const _0x30474f=_0x56b698;if(currentMode===_0x30474f(0xc2)&&player&&player[_0x30474f(0xe8)])return player[_0x30474f(0xe8)]();if(currentMode===_0x30474f(0x126))return localVideo[_0x30474f(0xbc)];return 0x0;}function getDuration(){const _0x26a797=_0x56b698;if(currentMode==='youtube'&&player&&player[_0x26a797(0xf6)])return player[_0x26a797(0xf6)]();if(currentMode===_0x26a797(0x126))return localVideo[_0x26a797(0xca)];return 0x1;}function updateTimeline(){const _0x2e6ec1=_0x56b698;if(isDragging)return;const _0x17c9e6=getCurrentTime(),_0x200144=getDuration();if(!_0x200144)return;document['getElementById'](_0x2e6ec1(0x11a))['style'][_0x2e6ec1(0xe3)]=_0x17c9e6/_0x200144*0x64+'%';if(isLooping&&loopEnd!==null){if(_0x17c9e6>=loopEnd||_0x17c9e6<loopStart-0x1)seekTo(loopStart);}}function seekTo(_0x3de64a){const _0xd6bb3e=_0x56b698;if(currentMode===_0xd6bb3e(0xc2))player[_0xd6bb3e(0xb5)](_0x3de64a,!![]);else localVideo[_0xd6bb3e(0xbc)]=_0x3de64a;}function seekVideo(_0x16a2ce){const _0x339cfb=_0x56b698;if(_0x16a2ce[_0x339cfb(0xe2)][_0x339cfb(0xf2)]['contains'](_0x339cfb(0xe6)))return;const _0x114b3f=document[_0x339cfb(0xbe)](_0x339cfb(0x128))[_0x339cfb(0x112)]();seekTo((_0x16a2ce['clientX']-_0x114b3f[_0x339cfb(0xc9)])/_0x114b3f[_0x339cfb(0xe3)]*getDuration());}let isDragging=![],dragType=null;function startDrag(_0x5ca734,_0x539b1d){const _0x289220=_0x56b698;_0x5ca734[_0x289220(0xe9)](),_0x5ca734[_0x289220(0xef)](),isDragging=!![],dragType=_0x539b1d,document['addEventListener'](_0x289220(0x10d),onDrag),document[_0x289220(0xc5)]('mouseup',stopDrag);}function onDrag(_0x2d4f21){const _0x2f6c35=_0x56b698;if(!isDragging)return;const _0x41c87e=document[_0x2f6c35(0xbe)](_0x2f6c35(0x128)),_0x2441a0=_0x41c87e[_0x2f6c35(0x112)](),_0x54f98b=getDuration();let _0x18249e=_0x2d4f21[_0x2f6c35(0xde)]-_0x2441a0['left'],_0x5a7c50=_0x18249e/_0x2441a0[_0x2f6c35(0xe3)];if(_0x5a7c50<0x0)_0x5a7c50=0x0;if(_0x5a7c50>0x1)_0x5a7c50=0x1;const _0x8b8710=_0x5a7c50*_0x54f98b;if(dragType===_0x2f6c35(0xc8)){if(loopEnd!==null&&_0x8b8710>=loopEnd)return;loopStart=_0x8b8710,updateLoopUI();}else{if(dragType===_0x2f6c35(0xfc)){if(loopStart!==null&&_0x8b8710<=loopStart)return;loopEnd=_0x8b8710,updateLoopUI();}}}function stopDrag(){const _0xaf32ed=_0x56b698;isDragging=![],dragType=null,document['removeEventListener'](_0xaf32ed(0x10d),onDrag),document[_0xaf32ed(0xb3)](_0xaf32ed(0x10b),stopDrag);if(loopStart!==null)seekTo(loopStart);}function updateLoopUI(){const _0x11a9b1=_0x56b698,_0x30c0ac=getDuration();if(!_0x30c0ac)return;if(loopStart!==null){const _0x3b052a=document[_0x11a9b1(0xbe)]('pinA');_0x3b052a[_0x11a9b1(0xfa)][_0x11a9b1(0xc9)]=loopStart/_0x30c0ac*0x64+'%',_0x3b052a[_0x11a9b1(0xfa)][_0x11a9b1(0xdf)]=_0x11a9b1(0x129);}if(loopEnd!==null){const _0x2a50f5=document['getElementById'](_0x11a9b1(0x10e));_0x2a50f5[_0x11a9b1(0xfa)][_0x11a9b1(0xc9)]=loopEnd/_0x30c0ac*0x64+'%',_0x2a50f5['style'][_0x11a9b1(0xdf)]=_0x11a9b1(0x129);}if(loopStart!==null&&loopEnd!==null){const _0x527f02=document[_0x11a9b1(0xbe)](_0x11a9b1(0xdb));_0x527f02[_0x11a9b1(0xfa)][_0x11a9b1(0xc9)]=loopStart/_0x30c0ac*0x64+'%',_0x527f02[_0x11a9b1(0xfa)][_0x11a9b1(0xe3)]=(loopEnd-loopStart)/_0x30c0ac*0x64+'%',_0x527f02[_0x11a9b1(0xfa)][_0x11a9b1(0xdf)]=_0x11a9b1(0x129);}}function setLoop(_0x38e89b){const _0x4949bb=_0x56b698,_0x223e3c=getCurrentTime(),_0x1ae558=getDuration();if(_0x38e89b==='A')loopStart=_0x223e3c,loopEnd=null,isLooping=![],updateLoopUI(),document[_0x4949bb(0xbe)]('pinB')['style'][_0x4949bb(0xdf)]=_0x4949bb(0xf9),document[_0x4949bb(0xbe)](_0x4949bb(0xdb))[_0x4949bb(0xfa)]['display']='none',document[_0x4949bb(0xbe)]('btnA')['classList'][_0x4949bb(0xb1)]('active'),document['getElementById'](_0x4949bb(0xc1))[_0x4949bb(0xf2)][_0x4949bb(0xbd)](_0x4949bb(0xd0));else{if(_0x38e89b==='B'){if(loopStart===null){alert(_0x4949bb(0x11c));return;}if(_0x223e3c<=loopStart){alert('B는\x20A보다\x20뒤여야\x20합니다.');return;}loopEnd=_0x223e3c,isLooping=!![],updateLoopUI(),document[_0x4949bb(0xbe)](_0x4949bb(0xc1))['classList'][_0x4949bb(0xb1)]('active');}}}function clearLoop(){resetLoopUI(),isLooping=![],loopStart=null,loopEnd=null;}function _0x132f(_0x39fd3a,_0x5473f1){const _0x424647=_0x4246();return _0x132f=function(_0x132fd2,_0x3316f0){_0x132fd2=_0x132fd2-0xac;let _0x4fb823=_0x424647[_0x132fd2];return _0x4fb823;},_0x132f(_0x39fd3a,_0x5473f1);}function resetLoopUI(){const _0x24c4fe=_0x56b698;document['getElementById']('pinA')['style'][_0x24c4fe(0xdf)]='none',document[_0x24c4fe(0xbe)](_0x24c4fe(0x10e))[_0x24c4fe(0xfa)][_0x24c4fe(0xdf)]=_0x24c4fe(0xf9),document[_0x24c4fe(0xbe)](_0x24c4fe(0xdb))[_0x24c4fe(0xfa)]['display']=_0x24c4fe(0xf9),document[_0x24c4fe(0xbe)](_0x24c4fe(0x117))[_0x24c4fe(0xf2)][_0x24c4fe(0xbd)]('active'),document[_0x24c4fe(0xbe)](_0x24c4fe(0xc1))[_0x24c4fe(0xf2)][_0x24c4fe(0xbd)](_0x24c4fe(0xd0));}const trackElem=document[_0x56b698(0xbe)](_0x56b698(0x128)),hoverBar=document[_0x56b698(0xbe)](_0x56b698(0x101)),tooltip=document[_0x56b698(0xbe)](_0x56b698(0xcc));trackElem[_0x56b698(0xc5)](_0x56b698(0x10d),_0x21ef8f=>{const _0xfad7ed=_0x56b698,_0x44a50a=trackElem['getBoundingClientRect'](),_0x1ac8e0=_0x21ef8f[_0xfad7ed(0xde)]-_0x44a50a[_0xfad7ed(0xc9)],_0x774890=Math[_0xfad7ed(0x110)](0x0,Math[_0xfad7ed(0x123)](0x1,_0x1ac8e0/_0x44a50a['width'])),_0x15a855=_0x774890*getDuration();hoverBar['style'][_0xfad7ed(0xe3)]=_0x774890*0x64+'%';const _0x54b94f=Math[_0xfad7ed(0xf3)](_0x15a855/0x3c)['toString']()[_0xfad7ed(0xcf)](0x2,'0'),_0x1142f8=Math[_0xfad7ed(0xf3)](_0x15a855%0x3c)[_0xfad7ed(0x121)]()[_0xfad7ed(0xcf)](0x2,'0'),_0x114e68=Math[_0xfad7ed(0xf3)](_0x15a855%0x1*0x64)[_0xfad7ed(0x121)]()[_0xfad7ed(0xcf)](0x2,'0');tooltip[_0xfad7ed(0xb7)]=_0x54b94f+':'+_0x1142f8+':'+_0x114e68,tooltip['style'][_0xfad7ed(0xdf)]=_0xfad7ed(0x129),tooltip['style'][_0xfad7ed(0xc9)]=_0x21ef8f[_0xfad7ed(0xde)]+'px',tooltip[_0xfad7ed(0xfa)][_0xfad7ed(0xd4)]=_0x44a50a[_0xfad7ed(0xd4)]+'px';}),trackElem[_0x56b698(0xc5)](_0x56b698(0xae),()=>{const _0xce9e76=_0x56b698;hoverBar[_0xce9e76(0xfa)][_0xce9e76(0xe3)]='0%',tooltip['style'][_0xce9e76(0xdf)]=_0xce9e76(0xf9);});function drawTimer(){const _0x58417b=_0x56b698,_0x29bffe=Math[_0x58417b(0xf3)](timerTime/0x3c)[_0x58417b(0x121)]()['padStart'](0x2,'0'),_0x34923a=(timerTime%0x3c)['toString']()['padStart'](0x2,'0');document['getElementById'](_0x58417b(0xc4))[_0x58417b(0xb7)]=_0x29bffe+':'+_0x34923a;const _0x126ad0=timerTime/timerMax*0x168,_0x31b82f=Math[_0x58417b(0x123)](Math[_0x58417b(0x110)](_0x126ad0,0x0),0x168);document['getElementById']('timerPie')[_0x58417b(0xfa)][_0x58417b(0xed)](_0x58417b(0xee),_0x31b82f+_0x58417b(0x11b));}function startTimer(){if(timerInterval)return;timerInterval=setInterval(()=>{timerTime>0x0?(timerTime--,drawTimer()):(pauseTimer(),playChime());},0x3e8);}function pauseTimer(){clearInterval(timerInterval),timerInterval=null;}function resetTimer(){pauseTimer(),timerTime=0x0,drawTimer();}function adjustTimer(_0x29a71a){timerTime+=_0x29a71a*0x3c;if(timerTime<0x0)timerTime=0x0;if(timerTime>timerMax)timerTime=timerMax;drawTimer();}function toggleSound(){const _0x1b27ab=_0x56b698;soundEnabled=!soundEnabled;const _0x26fd48=document['getElementById'](_0x1b27ab(0xf0));_0x26fd48[_0x1b27ab(0xb7)]=soundEnabled?_0x1b27ab(0xd9):_0x1b27ab(0xda);}function toggleTools(){const _0x5d3d5f=_0x56b698;document[_0x5d3d5f(0xbe)]('app')[_0x5d3d5f(0xf2)][_0x5d3d5f(0xe7)](_0x5d3d5f(0xfb)),setTimeout(updateTimeline,0x226);}function toggleTheme(){const _0xd50e9=_0x56b698,_0x20144b=document[_0xd50e9(0xb2)],_0x56af37=document[_0xd50e9(0xbe)](_0xd50e9(0xb9));_0x20144b[_0xd50e9(0xd2)]('data-theme')==='dark'?(_0x20144b[_0xd50e9(0x106)](_0xd50e9(0xc3),_0xd50e9(0xc6)),_0x56af37['innerText']='🌙'):(_0x20144b[_0xd50e9(0x106)](_0xd50e9(0xc3),_0xd50e9(0xb8)),_0x56af37[_0xd50e9(0xb7)]='☀️');}const memoPad=document[_0x56b698(0xbe)](_0x56b698(0xd1));memoPad[_0x56b698(0x11d)]=localStorage['getItem'](_0x56b698(0x119))||'',memoPad[_0x56b698(0xc5)](_0x56b698(0x120),()=>localStorage[_0x56b698(0xec)]('loopPlayerMemo',memoPad[_0x56b698(0x11d)]));let currentFontSize=0x24;function changeFontSize(_0x1314e2){const _0x191da7=_0x56b698;currentFontSize+=_0x1314e2;if(currentFontSize<0xc)currentFontSize=0xc;memoPad[_0x191da7(0xfa)]['fontSize']=currentFontSize+'px';}drawTimer();
 </script>
 </body>
 </html>
